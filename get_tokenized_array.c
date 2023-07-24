@@ -6,25 +6,27 @@
 /*   By: bena <bena@student.42seoul.kr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/29 16:41:12 by bena              #+#    #+#             */
-/*   Updated: 2023/06/29 20:32:02 by bena             ###   ########.fr       */
+/*   Updated: 2023/07/24 19:28:45 by bena             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stdlib.h>
 
-int			get_number_of_tokens(const char *str);
-char		*get_next_token(const char **str);
-int			push_to_the_next_token(const char **str);
+int			get_number_of_tokens(const char *str, char c);
+char		*get_next_token(const char **str, char c);
+int			push_to_the_next_token(const char **str, char c);
 static char	**remove_matrix(char **array);
 
-char	**get_tokenized_array(const char *str)
+char	**get_tokenized_array(const char *str, char c)
 {
 	int		size;
 	char	**output;
 	int		i;
 
-	size = get_number_of_tokens(str);
-	if (size == 0)
+	if (str == NULL)
+		return (NULL);
+	size = get_number_of_tokens(str, c);
+	if (size < 0)
 		return (NULL);
 	output = (char **)malloc(sizeof(char *) * (size + 1));
 	if (output == NULL)
@@ -32,7 +34,7 @@ char	**get_tokenized_array(const char *str)
 	i = 0;
 	while (i < size)
 	{
-		output[i] = get_next_token(&str);
+		output[i] = get_next_token(&str, c);
 		if (output[i] == NULL)
 			return (remove_matrix(output));
 		i++;
@@ -41,7 +43,7 @@ char	**get_tokenized_array(const char *str)
 	return (output);
 }
 
-int	get_number_of_tokens(const char *str)
+int	get_number_of_tokens(const char *str, char c)
 {
 	int	output;
 	int	token_size;
@@ -49,15 +51,17 @@ int	get_number_of_tokens(const char *str)
 	output = 0;
 	while (*str)
 	{
-		token_size = push_to_the_next_token(&str);
+		token_size = push_to_the_next_token(&str, c);
 		if (token_size > 0)
 			output++;
 		str += token_size;
+		if (token_size < 0)
+			return (-1);
 	}
 	return (output);
 }
 
-char	*get_next_token(const char **str)
+char	*get_next_token(const char **str, char c)
 {
 	char	*output;
 	int		token_size;
@@ -65,9 +69,7 @@ char	*get_next_token(const char **str)
 
 	if (str == NULL || *str == NULL)
 		return (NULL);
-	token_size = push_to_the_next_token(str);
-	if (token_size == 0)
-		return (NULL);
+	token_size = push_to_the_next_token(str, c);
 	output = (char *)malloc(sizeof(char) * (token_size + 1));
 	if (output == NULL)
 		return (NULL);
@@ -79,7 +81,7 @@ char	*get_next_token(const char **str)
 	return (output);
 }
 
-int	push_to_the_next_token(const char **str)
+int	push_to_the_next_token(const char **str, char c)
 {
 	const char	*ptr;
 	int			in_brace;
@@ -89,7 +91,7 @@ int	push_to_the_next_token(const char **str)
 		return (0);
 	in_brace = 0;
 	in_double_brace = 0;
-	while (**str && **str == ' ')
+	while (**str && **str == c)
 		(*str)++;
 	ptr = *str;
 	while (*ptr)
@@ -98,10 +100,12 @@ int	push_to_the_next_token(const char **str)
 			in_brace ^= 1;
 		else if (*ptr == '\"' && in_brace == 0)
 			in_double_brace ^= 1;
-		if (in_brace == 0 && in_double_brace == 0 && *ptr == ' ')
+		if (in_brace == 0 && in_double_brace == 0 && *ptr == c)
 			break ;
 		ptr++;
 	}
+	if (*ptr == '\0' && (in_brace != 0 || in_double_brace != 0))
+		return (-1);
 	return (ptr - *str);
 }
 
